@@ -183,8 +183,8 @@ def elemLoad(p,n,f):
   detJ=2*area(p)
   #Finally we obtain the element load vector
   Load=map(lambda i:sum(map(lambda j:wquad[j]*f(xtrans[j][0],xtrans[j][1])
-                 *Nshape(i,xref[j][0],xref[j][1])*np.abs(detJ),range(0,n))),range(0,3))
-  return 1./2*np.array(Load).reshape(3,1)
+                 *Nshape(i,xref[j][0],xref[j][1])*np.abs(detJ),range(0,len(wquad)))),range(0,3))
+  return 1./4*np.array(Load).reshape(3,1)
 
 
 # Now we gonna assemble the whole elements to obtain the total stiffenss
