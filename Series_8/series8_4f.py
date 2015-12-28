@@ -87,7 +87,7 @@ def no_homogen(h0,f,n,g):
 	Loadneumann=fem.loadNeumann(p,be,n,g)
 	#Finally the Loadvector will be the sum of the one with the source f
 	# and the one with f
-	Load=Load-Loadneumann
+	Load=Load+Loadneumann
 	# Lets compute the vector m that analogous to the load vector
 	# with f(x.y)=1
 	m=fem.load(p,t,n,lambda x,y:1)
@@ -102,13 +102,9 @@ def no_homogen(h0,f,n,g):
 	Load=np.concatenate((Load,np.array([[0]])))
 	# Now lets get the solution of the linear system using spsolve function
 	U=spla.spsolve(B,Load)
-	#We extract the solution u and the multiplicer l
 	u=U[0:size]
 	l=U[size]
-	# We return [p,t,u,l]
-	return p,t,u,l
-
-
+	return [p,t,u,l]
 
 
 # To get a solution u(x1,x2)=x1*sin(pi*r)
