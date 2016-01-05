@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 # which gives a analytic solution u(x,y)=((8pi+1)/(8pi^2+1))cos(2pi*x)cos(2pi*y)
 
 #lets define the source function
-f= lambda x1,x2: (8*np.pi+1)*np.cos(2*np.pi*x1)*np.cos(2*np.pi*x2)
+f= lambda x1,x2: (8*np.pi**2+1)*np.cos(2*np.pi*x1)*np.cos(2*np.pi*x2)
 
 # The order of the quadrature will be 3
 n=3
@@ -57,7 +57,7 @@ def error_energy(h0):
 	# For this source f and the analytic solution the first part of the
 	# discretization error related with the load vector evaluated on 
 	# analytic solution will be
-	lu=(1./4)*((8*np.pi+1)**2)/(8*np.pi**2+1)
+	lu=1./4+2*np.pi**2
 	# The part related to the approximate soluiton will be the innerproduct
 	# of fn and pn
 	lun=un.dot(fn)
