@@ -308,10 +308,10 @@ def gp(p,g,x):
 #     lambda function
 
 def elemLoadNeumann(p,n,g):
-  # Lets get the vectors and weights in the Guass-Legendre quadratured
+  # Lets get the vectors and weights in the Guass-Legendre quadrature
   x,w=np.polynomial.legendre.leggauss(n)
   # now lets define the final determinant of the transformation in the integral
-  det=np.sqrt(p[1,0]**2+(p[1,1]-p[0,1])**2)/2
+  det=np.sqrt((p[1,0]-p[0,0])**2+(p[1,1]-p[0,1])**2)/2
   #Finally we can compute the boundary element value
   LoadNeumann=map(lambda i:sum(map(lambda j:w[j]*gp(p,g,(x[j]+1)/2)
   	*Nbound(i,(x[j]+1)/2),range(0,len(w)))),range(0,2))
@@ -346,5 +346,5 @@ def TB(be,p,K):
 def loadNeumann(p,be,n,g):
   # Sum up the matrix element mass weighted with the T matrices (the conecction)
   return sum(map(lambda K:(TB(be,p,K).transpose()
-    .dot(elemLoadNeumann(np.array([p[i-1] for i in be[K]]),n,g))),range(0,len(be))))
+    .dot(elemLoadNeumann(np.array([p[i-1] for i in be[K]]),n,g))),range(0,len(be))))  
   
