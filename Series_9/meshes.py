@@ -187,22 +187,22 @@ def unique_edges(edges):
 
 
 def edgeIndex(p,t):
-# First we initialize an array of length N
-N=len(p)
-EdgeIndex=np.zeros((N,N))
-# First we gonna do an array with the edges and the numbering of their
-# nodes
-edges=[]
-for ti in t:
-	edges=edges+[[ti[0],ti[1]],[ti[0],ti[2]],[ti[1],ti[2]]]
-#We extract just the unique value in a array N
-edges=np.array(unique_edges(edges))
-# Clearly the output will be a symmetric matrix
-for i in range(len(edges)):
-	EdgeIndex[edges[i][0]-1,edges[i][1]-1]=i+1
-	EdgeIndex[edges[i][1]-1,edges[i][0]-1]=i+1
-#We return the EdgeIndex matrix and the array with the edges in their position
-return [edges,EdgeIndex]
+	# First we initialize an array of length N
+	N=len(p)
+	EdgeIndex=np.zeros((N,N))
+	# First we gonna do an array with the edges and the numbering of their
+	# nodes
+	edges=[]
+	for ti in t:
+		edges=edges+[[ti[0],ti[1]],[ti[1],ti[2]],[ti[2],ti[0]]]
+	#We extract just the unique value in a array N
+	edges=np.array(unique_edges(edges))
+	# Clearly the output will be a symmetric matrix
+	for i in range(len(edges)):
+		EdgeIndex[edges[i][0]-1,edges[i][1]-1]=i+1
+		EdgeIndex[edges[i][1]-1,edges[i][0]-1]=i+1
+	#We return the EdgeIndex matrix and the array with the edges in their position
+	return [edges,EdgeIndex]
 
 
 

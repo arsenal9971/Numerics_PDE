@@ -18,6 +18,7 @@
 import numpy as np
 import scipy.sparse as sparse
 import math
+import meshes as msh
 
 def gaussTriangle(n):
 
@@ -345,10 +346,10 @@ def TB(be,p,K):
 # g - Neumann data
 
 def loadNeumann(p,be,n,g):
-  # Sum up the matrix element mass weighted with the T matrices (the conecction)
-  return sum(map(lambda K:(TB(be,p,K).transpose()
-    .dot(elemLoadNeumann(np.array([p[i-1] for i in be[K]]),n,g))),range(0,len(be))))  
-  
+	# Sum up the matrix element mass weighted with the T matrices (the conecction)
+	return sum(map(lambda K:(TB(be,p,K).transpose()
+		.dot(elemLoadNeumann(np.array([p[i-1] for i in be[K]]),n,g))),range(0,len(be))))  
+
 
 
 ## Nonlinear elements 
@@ -358,8 +359,8 @@ def loadNeumann(p,be,n,g):
 ## int_K λ1^(β1)*λ2^(β2)*λ3^(β3) using the formula (1)
 
 def baryint(p,b1,b2,b3):
-  return 2*area(p)*(math.factorial(b1)*math.factorial(b2)
-    *math.factorial(b3))/math.factorial(b1+b2+b3+2)
+	return 2*area(p)*(math.factorial(b1)*math.factorial(b2)
+		*math.factorial(b3))/math.factorial(b1+b2+b3+2)
 
 ## Lets define the function elemStiffnessP2 matrix that returns
 ## the 6x6 element stiffness quadratic matrix for a triangle K
@@ -373,49 +374,223 @@ def baryint(p,b1,b2,b3):
 #
 
 def elemStiffnessP2(p):
-  #We compute the area of the triangle using shoelace formula
-  K=area(p)
-  # We compute the coordinate difference matrix DK in the triangle K
-  DK=np.array([[p[1,1]-p[2,1],p[2,1]-p[0,1],p[0,1]-p[1,1]],
-               [p[2,0]-p[1,0],p[0,0]-p[2,0],p[1,0]-p[0,0]]])
-  # We compute the G_K matrix with the entris (GK)_{i,j}=grad(λ_j)⋅grad(λ_i)
-  GK=(1./(4*K**2))*np.transpose(DK).dot(DK)
-  #We initialize the entries of the element stiffnessmatrix
-  ElemStiff=np.zeros((6,6))
-  ElemStiff[0,0]=GK[0,0]*K
-  ElemStiff[0,1]=GK[0,1]*K
-  ElemStiff[1,0]=ElemStiff[0,1]
-  ElemStiff[0,2]=GK[0,2]*K
-  ElemStiff[2,0]=ElemStiff[0,2]
-  ElemStiff[0,3]=GK[0,1]*baryint(p,0,0,1)+GK[0,2]*baryint(p,0,1,0)
-  ElemStiff[3,0]=ElemStiff[0,3]
-  ElemStiff[0,4]=GK[0,0]*baryint(p,0,0,1)+GK[0,2]*baryint(p,1,0,0)
-  ElemStiff[4,0]=ElemStiff[0,4]
-  ElemStiff[0,5]=GK[0,0]*baryint(p,0,1,0)+GK[0,1]*baryint(p,1,0,0)
-  ElemStiff[5,0]=ElemStiff[0,5]
-  ElemStiff[1,1]=GK[1,1]*K
-  ElemStiff[1,2]=GK[1,2]*K
-  ElemStiff[2,1]=ElemStiff[1,2]
-  ElemStiff[1,3]=GK[1,1]*baryint(p,0,0,1)+GK[1,2]*baryint(p,0,1,0)
-  ElemStiff[3,1]=ElemStiff[1,3]
-  ElemStiff[1,4]=GK[1,0]*baryint(p,0,0,1)+GK[1,2]*baryint(p,1,0,0)
-  ElemStiff[4,1]=ElemStiff[1,4]
-  ElemStiff[1,5]=GK[1,0]*baryint(p,0,1,0)+GK[1,1]*baryint(p,1,0,0)
-  ElemStiff[5,1]=ElemStiff[1,5]
-  ElemStiff[2,2]=GK[2,2]*K
-  ElemStiff[2,3]=GK[2,1]*baryint(p,0,0,1)+GK[2,2]*baryint(p,0,1,0)
-  ElemStiff[3,2]=ElemStiff[2,3]
-  ElemStiff[2,4]=GK[2,0]*baryint(p,0,0,1)+GK[2,2]*baryint(p,1,0,0)
-  ElemStiff[4,2]=ElemStiff[2,4]
-  ElemStiff[2,5]=GK[2,0]*baryint(p,0,1,0)+GK[2,1]*baryint(p,1,0,0)
-  ElemStiff[5,2]=ElemStiff[2,5]
-  ElemStiff[3,3]=GK[1,1]*baryint(p,0,0,2)+2*GK[1,2]*baryint(p,0,1,1)+GK[2,2]*baryint(p,0,2,0)
-  ElemStiff[3,4]=GK[0,1]*baryint(p,0,0,2)+GK[1,2]*baryint(p,1,0,1)+GK[2,0]*baryint(p,0,1,1)+GK[2,2]*baryint(p,1,1,0)
-  ElemStiff[4,3]=ElemStiff[3,4]
-  ElemStiff[3,5]=GK[2,1]*baryint(p,1,1,0)+GK[2,0]*baryint(p,0,2,0)+GK[1,1]*baryint(p,1,0,1)+GK[1,0]*baryint(p,0,1,1)
-  ElemStiff[5,3]=ElemStiff[3,5]
-  ElemStiff[4,4]=GK[2,2]*baryint(p,2,0,0)+2*GK[0,2]*baryint(p,1,0,1)+GK[0,0]*baryint(p,0,0,2)
-  ElemStiff[4,5]=GK[2,1]*baryint(p,2,0,0)+GK[2,0]*baryint(p,1,1,0)+GK[0,1]*baryint(p,1,0,1)+GK[0,0]*baryint(p,0,1,1)
-  ElemStiff[5,4]=ElemStiff[4,5]
-  ElemStiff[5,5]=GK[1,1]*baryint(p,2,0,0)+2*GK[0,1]*baryint(p,1,1,0)+GK[0,0]*baryint(p,0,2,0)
-  return ElemStiff
+	#We compute the area of the triangle using shoelace formula
+	K=area(p)
+	# We compute the coordinate difference matrix DK in the triangle K
+	DK=np.array([[p[1,1]-p[2,1],p[2,1]-p[0,1],p[0,1]-p[1,1]],
+	           [p[2,0]-p[1,0],p[0,0]-p[2,0],p[1,0]-p[0,0]]])
+	# We compute the G_K matrix with the entris (GK)_{i,j}=grad(λ_j)⋅grad(λ_i)
+	GK=(1./(4*K**2))*np.transpose(DK).dot(DK)
+	#We initialize the entries of the element stiffnessmatrix
+	ElemStiff=np.zeros((6,6))
+	ElemStiff[0,0]=GK[0,0]*K
+	ElemStiff[0,1]=GK[0,1]*K
+	ElemStiff[1,0]=ElemStiff[0,1]
+	ElemStiff[0,2]=GK[0,2]*K
+	ElemStiff[2,0]=ElemStiff[0,2]
+	ElemStiff[0,3]=GK[0,1]*baryint(p,0,0,1)+GK[0,2]*baryint(p,0,1,0)
+	ElemStiff[3,0]=ElemStiff[0,3]
+	ElemStiff[0,4]=GK[0,0]*baryint(p,0,0,1)+GK[0,2]*baryint(p,1,0,0)
+	ElemStiff[4,0]=ElemStiff[0,4]
+	ElemStiff[0,5]=GK[0,0]*baryint(p,0,1,0)+GK[0,1]*baryint(p,1,0,0)
+	ElemStiff[5,0]=ElemStiff[0,5]
+	ElemStiff[1,1]=GK[1,1]*K
+	ElemStiff[1,2]=GK[1,2]*K
+	ElemStiff[2,1]=ElemStiff[1,2]
+	ElemStiff[1,3]=GK[1,1]*baryint(p,0,0,1)+GK[1,2]*baryint(p,0,1,0)
+	ElemStiff[3,1]=ElemStiff[1,3]
+	ElemStiff[1,4]=GK[1,0]*baryint(p,0,0,1)+GK[1,2]*baryint(p,1,0,0)
+	ElemStiff[4,1]=ElemStiff[1,4]
+	ElemStiff[1,5]=GK[1,0]*baryint(p,0,1,0)+GK[1,1]*baryint(p,1,0,0)
+	ElemStiff[5,1]=ElemStiff[1,5]
+	ElemStiff[2,2]=GK[2,2]*K
+	ElemStiff[2,3]=GK[2,1]*baryint(p,0,0,1)+GK[2,2]*baryint(p,0,1,0)
+	ElemStiff[3,2]=ElemStiff[2,3]
+	ElemStiff[2,4]=GK[2,0]*baryint(p,0,0,1)+GK[2,2]*baryint(p,1,0,0)
+	ElemStiff[4,2]=ElemStiff[2,4]
+	ElemStiff[2,5]=GK[2,0]*baryint(p,0,1,0)+GK[2,1]*baryint(p,1,0,0)
+	ElemStiff[5,2]=ElemStiff[2,5]
+	ElemStiff[3,3]=GK[1,1]*baryint(p,0,0,2)+2*GK[1,2]*baryint(p,0,1,1)+GK[2,2]*baryint(p,0,2,0)
+	ElemStiff[3,4]=GK[0,1]*baryint(p,0,0,2)+GK[1,2]*baryint(p,1,0,1)+GK[2,0]*baryint(p,0,1,1)+GK[2,2]*baryint(p,1,1,0)
+	ElemStiff[4,3]=ElemStiff[3,4]
+	ElemStiff[3,5]=GK[2,1]*baryint(p,1,1,0)+GK[2,0]*baryint(p,0,2,0)+GK[1,1]*baryint(p,1,0,1)+GK[1,0]*baryint(p,0,1,1)
+	ElemStiff[5,3]=ElemStiff[3,5]
+	ElemStiff[4,4]=GK[2,2]*baryint(p,2,0,0)+2*GK[0,2]*baryint(p,1,0,1)+GK[0,0]*baryint(p,0,0,2)
+	ElemStiff[4,5]=GK[2,1]*baryint(p,2,0,0)+GK[2,0]*baryint(p,1,1,0)+GK[0,1]*baryint(p,1,0,1)+GK[0,0]*baryint(p,0,1,1)
+	ElemStiff[5,4]=ElemStiff[4,5]
+	ElemStiff[5,5]=GK[1,1]*baryint(p,2,0,0)+2*GK[0,1]*baryint(p,1,1,0)+GK[0,0]*baryint(p,0,2,0)
+	return ElemStiff
+
+
+## Now we will define a function that compute the element mass matrix in a triangle
+## with vertices at p
+
+# input:
+# p - 3x2-matrix of the coordinates of the triangle nodes
+#
+# output:
+# MK - element stiffness matrix
+#
+
+def elemMassP2(p):
+	# We define an array with the exponents in λ_i for the shape fucntions
+	Shape=np.array([[1,0,0],[0,1,0],[0,0,1],[0,1,1],[1,0,1],[1,1,0]])
+	# We initialize the element mass matrix
+	ElemMass=np.zeros((6,6))
+	# Now we insert the entries in the matrix using the integral formula for 
+	# the barycentric coordinates
+	for i in range(6):
+		for j in range(6):
+			# Compute the exponents of the λs in 
+			exp=Shape[i]+Shape[j]
+			ElemMass[i,j]=baryint(p,exp[0],exp[1],exp[2])
+	return ElemMass
+
+
+
+# Function that computes the element Load vector for quadratic elements
+ 
+# Input:
+# p - 3x2 matrix of the coordinates of the triangle nodes
+# n - order of the numerical quadrature (1 <= n <= 5)
+# f - source term function
+
+# Function that calculates the orthogonal of a two-dimensional vector
+
+def ort(v):
+	return np.array([-v[1],v[0]]) 
+
+# Function that computes the j-th barycentric coordinates for a triangle
+# with indices in p, at point x and j going from 1 to 3
+
+def lamb(j,p,x1,x2):
+	# Compute the area
+	K=area(p)
+	# Return the value
+	return (1./(2*K))*(np.array([x1,x2])-p[j%3]).dot(ort(p[(j-2)%3]-p[j%3]))
+
+# Lets define the quadratic finite elements functions with j=0,...,5
+
+def Nquad(j,p,x1,x2):
+	#Define the function
+	nquad=[lamb(1,p,x1,x2),lamb(2,p,x1,x2),lamb(3,p,x1,x2),
+	lamb(2,p,x1,x2)*lamb(3,p,x1,x2),lamb(1,p,x1,x2)*lamb(3,p,x1,x2),
+	lamb(1,p,x1,x2)*lamb(2,p,x1,x2)]
+	return nquad[j]
+
+# Lets define the function that computes the element load vector
+
+# input:
+  # p - 3x2 matrix of the coordinates of the triangle nodes
+  # n - order of the numerical quadrature (1 <= n <= 5)
+  # f - source term function
+
+
+def elemLoadP2(p,n,f):
+	#Lets get the vectors and weights in the quadrature
+	quad=gaussTriangle(n)
+	xquad=quad[0]
+	wquad=quad[1]
+	#Transformed each element of the quadrature points to np.array
+	xquad=map(lambda x: np.array(x),xquad)
+	#Lets generate a list of the vector transformed to the reference triangle
+	#to integrate in the triangle where the quadrature is defined
+	xref=map(lambda x: (x+1)/2,xquad)
+	#Lets transformed to the original triangle the new coordinates
+	xtrans=map(lambda x:transform(p,x[0],x[1]), xref)
+	#The determinant of the Jacobian
+	detJ=2*area(p)
+	#Finally we obtain the element load vector
+	Load=map(lambda i:sum(map(lambda j:wquad[j]*f(xtrans[j][0],xtrans[j][1])
+	             *Nquad(i,p,xtrans[j][0],xtrans[j][1])*np.abs(detJ),range(0,len(wquad)))),range(0,6))
+	return 1./4*np.array(Load).reshape(6,1)
+
+
+
+# Now we gonna assemble the whole quadratic elements to obtain the total stiffenss
+# matrix
+
+# Lets define the T matrix correspondent to the quadratic element methods
+
+# input:
+
+  # t : array with the triangles
+  # emi : matrix with incidences of edges in nodes
+  # K : the number of the triangle in the t matrix
+
+def TP2(t,emi,K):
+	#First lets calculate the matrix correspondent to the nodes in a triangle
+	Tnode=T(t,K)
+	# Number of nodes
+	n=Tnode.shape[1]
+	# Start the Tedge matrix with just zeros
+	m=int(emi.max())
+	Tedge=np.zeros((3,m))
+	# extract nodes index in the K triangle
+	index=t[K]
+	# Get the index in the emi array of the correspondence edge numbering
+	edgenumb1=int(emi[index[0]-1,index[1]-1])
+	edgenumb2=int(emi[index[1]-1,index[2]-1])
+	edgenumb3=int(emi[index[2]-1,index[0]-1])
+	# Put the ones
+	Tedge[0,edgenumb1-1]=1
+	Tedge[1,edgenumb2-1]=1
+	Tedge[2,edgenumb3-1]=1
+	# Now create a block matrix with one left upper block the Tnode matrix
+	# and the right lower block with Tedge matrix
+	Ttot=np.zeros((6,n+m))
+	#Insert the slices
+	Ttot[0:3,0:n]=Tnode.toarray()
+	Ttot[3:6,0:m]=Tedge
+	#Returning the matrix T in lil sparse format
+	return sparse.lil_matrix(Ttot)
+
+# Now lets get the global stiffnes matrix for quadratic elements
+
+# input:
+# p - Nx2 matrix with coordinates of the nodes
+# t - Mx3 matrix with indices of nodes of the triangles
+
+def stiffnessP2(p,t):
+  #Compute the matrix with node-edge indices
+  emi=msh.edgeIndex(p,t)[1]
+  # Sum up the matrix element stiffness weighted with the T matrices (the conecction)
+  # in lil_matrix format
+  stiff=sum(map(lambda K:(TP2(t,emi,K).transpose()
+  	.dot(elemStiffnessP2(np.array([p[i-1] for i in t[K]]))))
+  .dot(TP2(t,emi,K).toarray()),range(0,len(t))))
+  return sparse.lil_matrix(stiff)
+
+# Now lets get the global mass matrix in the same way that the stiffness
+
+# input:
+# p - Nx2 matrix with coordinates of the nodes
+# t - Mx3 matrix with indices of nodes of the triangles
+
+
+def massP2(p,t):
+  #Compute the matrix with node-edge indices
+  emi=msh.edgeIndex(p,t)[1]
+  # Sum up the matrix element mass weighted with the T matrices (the conecction)
+  # in lil_matrix format
+  massm=sum(map(lambda K:(TP2(t,emi,K).transpose()
+  	.dot(elemMassP2(np.array([p[i-1] for i in t[K]]))))
+  .dot(TP2(t,emi,K).toarray()),range(0,len(t))))
+  return sparse.lil_matrix(massm)
+
+# Now lets get the global load vector 
+
+# input:
+# p - Nx2 matrix with coordinates of the nodes
+# t - Mx3 matrix with indices of nodes of the triangles
+# n - order of the numerical quadrature (1 <= n <= 5)
+# f - source term function
+
+def loadP2(p,t,n,f):
+  #Compute the matrix with node-edge indices
+  emi=msh.edgeIndex(p,t)[1]
+  # Sum up the matrix element mass weighted with the T matrices (the conecction)
+  return sum(map(lambda K:(TP2(t,emi,K).transpose()
+  	.dot(elemLoadP2(np.array([p[i-1] for i in t[K]]),n,f))),range(0,len(t))))
+
+
